@@ -26,6 +26,29 @@ class User(db.Model):
 
 # Put your Movie and Rating model classes here.
 
+# Movie model
+class Movie(db.Model): 
+    """Movies for ratings on the website """
+
+    __tablename__ = "movies"
+
+    movie_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    title = db.Column(db.String(100), nullable =False)
+    release_at = db.Column(db.DateTime, nullable = False)
+    imdb_url = db.Column(db.String(200), nullable = False)
+
+
+#Ratings Model
+class Rating(db.Model):
+    """Ratings database"""
+
+    __tablename__ = "ratings"
+
+    rating_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    movie_id = db.Column(db.Integer, db.ForeignKey("movies.movie_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+
 
 ##############################################################################
 # Helper functions
