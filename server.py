@@ -85,6 +85,17 @@ def user_login():
 
     return redirect('/')
 
+@app.route('/logout')
+def logout():
+    print(session)
+
+    session.pop('user_id')
+    flash("Logged out")
+    print(session)
+
+    return redirect('/')
+
+
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be5000 True at the
