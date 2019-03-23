@@ -46,10 +46,11 @@ def register_process():
 
     #check if user already exists
     if User.query.filter_by(email=email).all():
+        #if a user with that email is found, show message
         flash("A user with that email already exists!")
-
         print("A user with that email already exists")
     else:
+        #if no user with that email exists, create new user
         user = User(email=email, password=password)
         db.session.add(user)
         db.session.commit()
@@ -57,6 +58,33 @@ def register_process():
         flash("Registration complete!")
 
     return redirect('/')
+
+@app.route('/login', methods=['GET'])
+def login_form():
+    """User login form"""
+
+    return render_template("login_form.html")
+
+@app.route('/login', methods=['POST'])
+def user_login():
+    """Loggs user in"""
+
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    #gets user with specified email
+    user = User.query.filter_by(email=email).first()
+
+    #checks email exists and password is correct
+    if user is not None and user.password == password:
+        session['user_id'] = user.user_id
+        flash("Logged in")
+        session.modified = True
+    else:
+        flash("Log in unsucessful")
+
+    return redirect('/')
+
 
 if __name__ == "__main__":
     # We have to set debug=True here, since it has to be5000 True at the
