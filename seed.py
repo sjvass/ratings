@@ -18,6 +18,8 @@ def load_users():
 
     # Delete all rows in table, so if we need to run this a second time,
     # we won't be trying to add duplicate users
+    #need to delete rating db also because it has forigen keys from users
+    Rating.query.delete()
     User.query.delete()
 
     # Read u.user file and insert data
@@ -42,6 +44,8 @@ def load_movies():
     print("Movies")
 
     #empty movies db
+        #need to delete rating db also because it has forigen keys from movies
+    Rating.query.delete()
     Movie.query.delete()
 
     #read in u.item and insert data
@@ -50,12 +54,14 @@ def load_movies():
         full_row = row.split("|")
         movie_id, title, realse_at = full_row[:3]
         imdb_url = full_row[4]
-        loc_parenthesis = movie_id
+        
+        #removing release year from end of title
+        title_undated = title[:-7]
 
         release_date = datetime.strptime(realse_at, "%d-%b-%Y")
 
         movie = Movie(movie_id = movie_id,
-            title = title,
+            title = title_undated,
             release_at = release_date,
             imdb_url = imdb_url)
 
@@ -69,7 +75,7 @@ def load_ratings():
     """Load ratings from u.data into database."""
     print("Ratings")
 
-    #empty ratins db
+    #empty ratings db
     Rating.query.delete()
 
     #read in u.data and insert data
