@@ -32,8 +32,34 @@ def user_list():
     users = User.query.all()
     return render_template("user_list.html", users=users)
 
+@app.route('/register', methods=['GET'])
+def register_form():
+    """user registration form"""
+    return render_template("register_form.html")
+
+@app.route('/register', methods=['POST'])
+def register_process():
+    """Adds new user"""
+
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    #check if user already exists
+    if User.query.filter_by(email=email).all():
+        flash("A user with that email already exists!")
+
+        print("A user with that email already exists")
+    else:
+        user = User(email=email, password=password)
+        db.session.add(user)
+        db.session.commit()
+
+        flash("Registration complete!")
+
+    return redirect('/')
+
 if __name__ == "__main__":
-    # We have to set debug=True here, since it has to be True at the
+    # We have to set debug=True here, since it has to be5000 True at the
     # point that we invoke the DebugToolbarExtension
     app.debug = True
     # make sure templates, etc. are not cached in debug mode
@@ -42,6 +68,7 @@ if __name__ == "__main__":
     connect_to_db(app)
 
     # Use the DebugToolbar
-    DebugToolbarExtension(app)
+    # DebugToolbarExtension(app)
 
     app.run(port=5000, host='0.0.0.0')
+5000
