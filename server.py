@@ -25,12 +25,14 @@ def index():
     """Homepage."""
     return render_template("homepage.html")
 
+
 @app.route('/users')
 def user_list():
     """Show list of users."""
 
     users = User.query.all()
     return render_template("user_list.html", users=users)
+
 
 @app.route('/register', methods=['GET'])
 def register_form():
@@ -76,14 +78,15 @@ def user_login():
     user = User.query.filter_by(email=email).first()
 
     #checks email exists and password is correct
-    if user is not None and user.password == password:
+    if user is not None and user.password == password and 'user_id' not in session.keys():
         session['user_id'] = user.user_id
         flash("Logged in")
         session.modified = True
+        return redirect('/users/' + str(user.user_id))
     else:
         flash("Log in unsucessful")
+        return redirect('/')
 
-    return redirect('/')
 
 @app.route('/logout')
 def logout():
@@ -95,6 +98,39 @@ def logout():
 
     return redirect('/')
 
+
+@app.route('/users/<user_id>')
+def user_details(user_id): 
+    """ Get the details of user by user id"""
+
+    user = User.query.filter_by(user_id=user_id).one()
+    user_ratings = Rating.query.filter_by(user_id=user_id).options(
+        db.joinedload('movie')).all()
+    
+    # for user_rating in user_ratings: 
+    #     print(user_rating.movie.title)
+
+
+    return render_template('user_details.html', user=user, 
+                            ratings=user_ratings)
+
+
+@app.route('/movies')
+def movie_list():
+    """Show list of users."""
+
+    movies = Movie.query.order_by(Movie.title).all()
+    return render_template("movie_list.html", movies=movies)
+
+@app.route('/movies/<movie_id>')
+def movie_details(movie_id):
+    """ Get the details of movie by movie id"""
+
+    movie = Movie.query.filter_by(movie_id = movie_id).one()
+    movie_ratings = Rating.query.filter_by(movie_id = movie_id).all()
+
+
+    return render_template('movie_details.html', movie = movie, ratings=movie_ratings)
 
 
 if __name__ == "__main__":
