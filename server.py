@@ -4,6 +4,7 @@ from jinja2 import StrictUndefined
 
 from flask import (Flask, render_template, redirect, request, flash,
                     session)
+
 from flask_debugtoolbar import DebugToolbarExtension
 
 from model import User, Rating, Movie, connect_to_db, db
@@ -23,6 +24,7 @@ app.jinja_env.undefined = StrictUndefined
 @app.route('/')
 def index():
     """Homepage."""
+
     return render_template("homepage.html")
 
 
@@ -38,6 +40,7 @@ def user_list():
 def register_form():
     """user registration form"""
     return render_template("register_form.html")
+
 
 @app.route('/register', methods=['POST'])
 def register_process():
@@ -56,10 +59,10 @@ def register_process():
         user = User(email=email, password=password)
         db.session.add(user)
         db.session.commit()
-
         flash("Registration complete!")
 
     return redirect('/')
+
 
 @app.route('/login', methods=['GET'])
 def login_form():
@@ -67,9 +70,10 @@ def login_form():
 
     return render_template("login_form.html")
 
+
 @app.route('/login', methods=['POST'])
 def user_login():
-    """Loggs user in"""
+    """Logs user in"""
 
     email = request.form.get("email")
     password = request.form.get("password")
@@ -92,9 +96,10 @@ def user_login():
 def logout():
     print(session)
 
-    session.pop('user_id')
-    flash("Logged out")
-    print(session)
+    if 'user_id' in session: 
+        session.pop('user_id')
+        flash("Logged out")
+        print(session)
 
     return redirect('/')
 
@@ -122,15 +127,52 @@ def movie_list():
     movies = Movie.query.order_by(Movie.title).all()
     return render_template("movie_list.html", movies=movies)
 
+
 @app.route('/movies/<movie_id>')
 def movie_details(movie_id):
     """ Get the details of movie by movie id"""
 
     movie = Movie.query.filter_by(movie_id = movie_id).one()
     movie_ratings = Rating.query.filter_by(movie_id = movie_id).all()
+    scores = [str(rating.score) for rating in movie_ratings]
+    scores_str = ', '.join(scores)
+
+    return render_template('movie_details.html', movie = movie, ratings=movie_ratings, scores=scores_str)
 
 
-    return render_template('movie_details.html', movie = movie, ratings=movie_ratings)
+@app.route('/movies/<movie_id>', methods = ['POST']) 
+def rate_movie(movie_id):
+    """ Store user's movie rating"""
+
+    if is_logged_in():
+        rating = int(request.form.get("rating"))
+        previous_rating = Rating.query.filter( (Rating.user_id==session['user_id']) & (Rating.movie_id==movie_id)).first()
+        if previous_rating: 
+            #as previous ratings exists, update it
+            previous_rating.score = rating
+        
+        else: 
+            #as previous ratings does not exists, add a new record
+            new_rating = Rating(user_id=session['user_id'],movie_id=movie_id,score=rating)
+            db.session.add(new_rating)
+        
+        db.session.commit()
+        flash("Rating updated")
+        return redirect('/movies/' + movie_id)
+
+    else: 
+        flash("Please log in to rate this movie")
+        return redirect('/login')
+        
+    
+
+
+def is_logged_in():
+    """True is a user is logged in"""
+    return 'user_id' in session
+    
+
+
 
 
 if __name__ == "__main__":

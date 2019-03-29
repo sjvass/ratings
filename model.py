@@ -71,7 +71,9 @@ class Rating(db.Model):
                    user_id={self.user_id}
                    score={self.score}>"""
 
-
+# {% for rating in ratings %}
+#         {{ rating.score }}, 
+#         {% endfor %}
 ##############################################################################
 # Helper functions
 
@@ -92,3 +94,4 @@ if __name__ == "__main__":
     from server import app
     connect_to_db(app)
     print("Connected to DB.")
+
