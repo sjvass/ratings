@@ -1,6 +1,7 @@
 """Models and database functions for Ratings project."""
 
 from flask_sqlalchemy import SQLAlchemy
+from correlation import pearson
 
 # This is the connection to the PostgreSQL database; we're getting this through
 # the Flask-SQLAlchemy helper library. On this, we can find the `session`
@@ -27,6 +28,53 @@ class User(db.Model):
         """ Provide helpful representation when printed """
 
         return f"<User user_id = {self.user_id} email = {self.email}>"
+
+    def similarity(self, user2):
+        """compares user2's ratings to instance's ratings"""
+
+        self_ratings = {}
+        paired_ratings = []
+
+        for r in self.ratings:
+            self_ratings[r.movie_id] = r
+
+        for u2_rating in user2.ratings:
+            self_rating = self_ratings.get(u2_rating.movie_id)
+            if self_rating:
+                pair = (self_rating.score, u2_rating.score)
+                paired_ratings.append(pair)
+
+        if paired_ratings:
+            return pearson(paired_ratings)
+        else:
+            return 0.0
+
+    def predict_ratings(self, movie):
+        """Predicts what user will rate movie based on similar users' ratings"""
+        other_ratings = movie.ratings
+
+        other_users = [r.user for r in movie.ratings]
+
+        users_similarity = []
+
+        for o_user in other_users:
+            o_user_similarity = self.similarity(o_user)
+            similarity_pair = (o_user_similarity, o_user)
+            users_similarity.append(similarity_pair)
+
+        #sorts list of user similarities by most to least similar
+        sorted_similariry = sorted(users_similarity, key=lambda users_similarity: users_similarity[0], reverse=True)
+        most_similar_user = sorted_similariry[0]
+
+        most_similar_user_rating = 0
+
+        for r in most_similar_user[1].ratings:
+            if r.movie_id == movie.movie_id:
+                most_similar_user_rating = r.score
+
+        predict_rating = most_similar_user_rating * most_similar_user[0]
+        return predict_rating
+
 
 
 # Put your Movie and Rating model classes here.
@@ -71,9 +119,54 @@ class Rating(db.Model):
                    user_id={self.user_id}
                    score={self.score}>"""
 
-# {% for rating in ratings %}
-#         {{ rating.score }}, 
-#         {% endfor %}
+
+
+def similarity(user1, user2):
+    user1_ratings_dict = {}
+    paired_ratings = []
+
+    for r in user1.ratings:
+        user1_ratings_dict[r.movie_id] = r
+
+    for u2_rating in user2.ratings:
+        u1_rating = user1_ratings_dict.get(u2_rating.movie_id)
+        if u1_rating:
+            pair = (u1_rating.score, u2_rating.score)
+            paired_ratings.append(pair)
+
+    if paired_ratings:
+        return pearson(paired_ratings)
+    else:
+        return 0.0
+
+def predict_ratings(user, movie):
+    """Predicts what user will rate movie based on similar users' ratings"""
+    other_ratings = movie.ratings
+
+    other_users = [r.user for r in movie.ratings]
+
+    users_similarity = []
+
+    for o_user in other_users:
+        o_user_similarity = user.similarity(o_user)
+        similarity_pair = (o_user_similarity, o_user)
+        users_similarity.append(similarity_pair)
+
+    #sorts list of user similarities by most to least similar
+    sorted_similariry = sorted(users_similarity, key=lambda users_similarity: users_similarity[0], reverse=True)
+    most_similar_user = sorted_similariry[0]
+
+    most_similar_user_rating = 0
+
+    for r in most_similar_user[1].ratings:
+        if r.movie_id == movie.movie_id:
+            most_similar_user_rating = r.score
+
+    predict_rating = most_similar_user_rating * most_similar_user[0]
+    return predict_rating
+
+
+
 ##############################################################################
 # Helper functions
 
